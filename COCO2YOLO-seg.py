@@ -39,7 +39,7 @@ class ImageInfo():
     def __init__(self, img_dict: dict[Any, Any], data_dir: pathlib.Path) -> None:
 
         self.id = img_dict['id']
-        self.source_path: pathlib.Path = data_dir / img_dict['file_name']
+        self.source_path: pathlib.Path = data_dir.absolute() / img_dict['file_name']
         self.height = img_dict['height']
         self.width = img_dict['width']
         self.type = ImageType.TRAIN
@@ -67,8 +67,8 @@ class ImageInfo():
 class YoloDataset():
 
     def __init__(self, out_dir: pathlib.Path) -> None:
-        self.root_dir: pathlib.Path = out_dir.resolve()
-
+        self.root_dir: pathlib.Path = out_dir.absolute() # Keep the symlink.
+        print(f"output directory root: {self.root_dir}")
         if self.root_dir.exists():
             if (not self.root_dir.is_dir()):
                 raise ValueError(f"{self.root_dir} exists and is not a directory")
@@ -88,6 +88,7 @@ class YoloDataset():
         dest = self.GetImageDest(image)
         if not dest.exists():
             dest.symlink_to(image.source_path)
+
     def GenYaml(self,class_dict):
         yaml_dict = {
             "train" : f"./{IMAGES_FOLDER_NAME}/{ImageType.TRAIN.value}",
@@ -132,7 +133,7 @@ def convert_coco_to_yolo_segmentation(json_file:pathlib.Path, source_img_dir: pa
         val_size = total_img_length * 0.001
     val_size = int(val_size)
     # Set images.
-    for val_img in random.sample(image_info_dict.keys(), val_size):
+    for val_img in random.sample(list(image_info_dict), val_size):
         image_info_dict[val_img].SetType(ImageType.VAL)
 
     for info in image_info_dict.values():
