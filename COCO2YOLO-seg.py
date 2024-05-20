@@ -124,6 +124,8 @@ def convert_coco_to_yolo_segmentation(json_file:pathlib.Path, source_img_dir: pa
         full_category_dict[category["id"]] = category["name"]
     yolo_dataset.GenYaml(full_category_dict)
 
+    # Generate remap here.
+
     # Build a thing of images, and decide their destination
     total_img_length = len(coco_data['images'])
     val_size = total_img_length * 0.1  # 10 percent validation
@@ -136,9 +138,10 @@ def convert_coco_to_yolo_segmentation(json_file:pathlib.Path, source_img_dir: pa
     for val_img in random.sample(list(image_info_dict), val_size):
         image_info_dict[val_img].SetType(ImageType.VAL)
 
-    for info in image_info_dict.values():
-        # Make a symlink for the image as well while we loop
-        yolo_dataset.TryLinkImage(info)
+    # This will link image regardless of having segments.
+    # for info in image_info_dict.values():
+    #     # Make a symlink for the image as well while we loop
+    #     yolo_dataset.TryLinkImage(info)
 
 
     for annotation in annotations:
@@ -148,6 +151,8 @@ def convert_coco_to_yolo_segmentation(json_file:pathlib.Path, source_img_dir: pa
         bbox = annotation['bbox']
 
         image_info = image_info_dict[image_id]
+        # Moving the above loop here ensure linking only when segment exists.
+        yolo_dataset.TryLinkImage(image_info)
 
         # # This is a not used bbox feature.
         # # Calculate the normalized center coordinates and width/height
@@ -193,6 +198,8 @@ if __name__ == "__main__":
     parser.add_argument("json_file", type=pathlib.Path, help="path to coco json file")
     parser.add_argument("image_dir", default='./data', type=pathlib.Path, help="output dir")
     parser.add_argument("output_dir", default='./Yolo-conv', type=pathlib.Path, help="output dir")
+
+    # parser.add_argument("--force_id_pair")
 
     args = parser.parse_args()
     json_file: pathlib.Path = args.json_file
