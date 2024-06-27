@@ -93,7 +93,7 @@ class YoloDataset():
         yaml_dict = {
             "train" : f"./{IMAGES_FOLDER_NAME}/{ImageType.TRAIN.value}",
             "val" : f"./{IMAGES_FOLDER_NAME}/{ImageType.VAL.value}",
-            "path" : str(self.root_dir),
+            # Don't output path object. This will make it hard to debug. 
             "names" : class_dict
         }
         with open( self.root_dir / "dataset.yaml" , "w" ) as file:
@@ -139,9 +139,9 @@ def convert_coco_to_yolo_segmentation(json_file:pathlib.Path, source_img_dir: pa
         image_info_dict[val_img].SetType(ImageType.VAL)
 
     # This will link image regardless of having segments.
-    # for info in image_info_dict.values():
-    #     # Make a symlink for the image as well while we loop
-    #     yolo_dataset.TryLinkImage(info)
+    for info in image_info_dict.values():
+        # Make a symlink for the image as well while we loop
+        yolo_dataset.TryLinkImage(info)
 
 
     for annotation in annotations:
@@ -152,7 +152,7 @@ def convert_coco_to_yolo_segmentation(json_file:pathlib.Path, source_img_dir: pa
 
         image_info = image_info_dict[image_id]
         # Moving the above loop here ensure linking only when segment exists.
-        yolo_dataset.TryLinkImage(image_info)
+        # yolo_dataset.TryLinkImage(image_info)
 
         if action_bbox:
             # This is a not used bbox feature.
