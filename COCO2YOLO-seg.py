@@ -154,6 +154,10 @@ def convert_coco_to_yolo_segmentation(json_file:pathlib.Path, source_img_dir: pa
         # Moving the above loop here ensure linking only when segment exists.
         # yolo_dataset.TryLinkImage(image_info)
 
+        if not category_id in full_category_dict:
+            print(f"Skipping label of category {category_id}")
+            continue
+
         if action_bbox:
             # This is a not used bbox feature.
             # Calculate the normalized center coordinates and width/height
@@ -166,6 +170,13 @@ def convert_coco_to_yolo_segmentation(json_file:pathlib.Path, source_img_dir: pa
 
         else:
             # Convert COCO segmentation to YOLO segmentation format
+            # print(f"image id {image_id}")
+            # print(f"category id {category_id}")
+            # print(f"{segmentation}")
+            # Run into case of a empty list for segmentation? 
+            if not segmentation:
+                # skip empty segmentations
+                continue
             yolo_segmentation = [
                 f"{(x) / image_info.width:.5f} {(y) / image_info.height:.5f}"
                 for x, y in zip(segmentation[0][::2], segmentation[0][1::2])

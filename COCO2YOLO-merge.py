@@ -200,7 +200,7 @@ def convert_coco_to_yolo_segmentation(json_file:pathlib.Path,
     # for info in image_info_dict.values():
     #     # Make a symlink for the image as well while we loop
     #     yolo_dataset.TryLinkImage(info)
-
+    merged_count = 0
     for annotation in annotations:
         image_id = annotation['image_id']
         source_class_id = annotation['category_id']
@@ -227,6 +227,10 @@ def convert_coco_to_yolo_segmentation(json_file:pathlib.Path,
             yolo_annotation = f"{out_class_id} {x_center} {y_center} {bbox_width} {bbox_height}"
 
         else:
+            if not segmentation:
+                # skip empty segmentations
+                continue
+
             # Convert COCO segmentation to YOLO segmentation format
             yolo_segmentation = [
                 f"{(x) / image_info.width:.5f} {(y) / image_info.height:.5f}"
@@ -243,12 +247,13 @@ def convert_coco_to_yolo_segmentation(json_file:pathlib.Path,
         print(f"Image {image_info.stem_id} , adding {yolo_annotation}")
         if not yolo_dataset.AddLabel(image_info.stem_id ,yolo_annotation):
             print(f"Cannot add values for {image_id}, no label or image file found")
-
+        else:
+            merged_count +=1
         # label_filepath = yolo_dataset.GetLabelDest(image_info)
         # with open(label_filepath, 'a+') as file:
         #     file.write(yolo_annotation + '\n')
 
-    print(f"Conversion completed. YOLO segmentation annotations saved in {dest_yaml} folder.")
+    print(f"Merge completed. {merged_count} label added.")
 
 
 if __name__ == "__main__":
@@ -256,7 +261,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("json_file", type=pathlib.Path, help="path to coco json file")
     # parser.add_argument("image_dir", default='./data', type=pathlib.Path, help="output dir")
-    parser.add_argument("dest_yaml", default='./Yolo-conv', type=pathlib.Path, help="output dir")
+    parser.add_argument("dest_yaml", default='./Yolo-conv', type=pathlib.Path, help="output dataset yaml")
     parser.add_argument("--bbox" , default=False , action="store_true" , help="Default doing segmentation, if set, then do bounding box.")
 
     # parser.add_argument("--force_id_pair")
