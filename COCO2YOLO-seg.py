@@ -100,7 +100,7 @@ class YoloDataset():
             yaml.dump(yaml_dict , file )
 
 def convert_coco_to_yolo_segmentation(json_file:pathlib.Path, source_img_dir: pathlib.Path,
-                                      dest_folder: pathlib.Path,action_bbox = False):
+                                      dest_folder: pathlib.Path,action_bbox = False , include_empty = False):
 
     # Load the JSON file
     with open(json_file, 'r') as file:
@@ -138,10 +138,11 @@ def convert_coco_to_yolo_segmentation(json_file:pathlib.Path, source_img_dir: pa
     for val_img in random.sample(list(image_info_dict), val_size):
         image_info_dict[val_img].SetType(ImageType.VAL)
 
-    # This will link image regardless of having segments.
-    for info in image_info_dict.values():
-        # Make a symlink for the image as well while we loop
-        yolo_dataset.TryLinkImage(info)
+    # This will link image regardless of having segments. Could be useful as background images.
+    if include_empty:
+        for info in image_info_dict.values():
+            # Make a symlink for the image as well while we loop
+            yolo_dataset.TryLinkImage(info)
 
 
     for annotation in annotations:
@@ -151,8 +152,10 @@ def convert_coco_to_yolo_segmentation(json_file:pathlib.Path, source_img_dir: pa
         bbox = annotation['bbox']
 
         image_info = image_info_dict[image_id]
-        # Moving the above loop here ensure linking only when segment exists.
-        # yolo_dataset.TryLinkImage(image_info)
+
+        # Linking the image here will prevent use linking empty image without labels.
+        if not include_empty:
+            yolo_dataset.TryLinkImage(image_info)
 
         if not category_id in full_category_dict:
             print(f"Skipping label of category {category_id}")
@@ -202,6 +205,7 @@ if __name__ == "__main__":
     parser.add_argument("json_file", type=pathlib.Path, help="path to coco json file")
     parser.add_argument("image_dir", default='./data', type=pathlib.Path, help="output dir")
     parser.add_argument("output_dir", default='./Yolo-conv', type=pathlib.Path, help="output dir")
+    parser.add_argument("--include_empty" ,default=False , action="store_true" , help="Weather to copy images without segmentation over" )
     parser.add_argument("--bbox" , default=False , action="store_true" , help="Default doing segmentation, if set, then do bounding box.")
 
     # parser.add_argument("--force_id_pair")
@@ -214,4 +218,4 @@ if __name__ == "__main__":
     if not image_source.exists():
         raise ValueError(f"Image dir {image_source} doesn't exists")
 
-    convert_coco_to_yolo_segmentation(json_file.resolve(), image_source, out_dir , action_bbox = args.bbox)
+    convert_coco_to_yolo_segmentation(json_file.resolve(), image_source, out_dir , action_bbox = args.bbox , include_empty = args.include_empty)
