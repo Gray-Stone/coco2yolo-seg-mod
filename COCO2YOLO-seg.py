@@ -8,7 +8,6 @@ MIT License
 """
 
 import json
-import os
 import pathlib
 import argparse
 

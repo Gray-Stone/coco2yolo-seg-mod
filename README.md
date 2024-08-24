@@ -1,10 +1,14 @@
-Convert COCO segmentation annotation to YOLO segmentation format effortlessly with this Python package. The resulting annotations are stored in individual text files, following the YOLO segmentation format convention. 
 
-# COCO to YOLO Segmentation Converter
+**This is a fork of repo (https://github.com/z00bean/coco2yolo-seg.git)[https://github.com/z00bean/coco2yolo-seg.git] with my custom edits and addition**
 
-This repository contains a Python script for converting COCO segmentation annotations to YOLO segmentation format. The YOLO segmentation format is commonly used for training YOLO segmentation models.
+Convert COCO segmentation annotation to YOLO segmentation format with the ".txt per image" format. Does auto val/train segmentation during conversion.
+
+Separate script handles merging additional coco labels into existing yolo project.
+
+This repo only contain 2 simple python scripts, and are expected to be cloned and run by user. The script should be intuitive for modifying to custom needs.
 
 ## YOLO Segmentation Data Format
+
 
 The dataset format used for training YOLO segmentation models is as follows:
 
@@ -20,31 +24,49 @@ The format for a single row in the segmentation dataset file is as follows:
 The coordinates are separated by spaces.
 
 
-## Usage
+## COCO2YOLO-seg.py Usage
 
-To use the COCO to YOLO segmentation converter, follow these steps:
+Example usage:
+```
+coco2yolo-seg-mod/COCO2YOLO-seg.py coco_folder/coco_labels.json coco_folder/data output_folder/ --bbox
+```
 
-1. Clone the repository:
-   `git clone https://github.com/z00bean/coco2yolo-seg.git`
-3. Prepare your COCO dataset: Modify the COCO annotation JSON file path and specify the desired output folder name in the Python file.
-4. Run the conversion script: `python COCO2YOLO-seg.py`
+The script `COCO2YOLO-seg.py` took 3 positional arguments
+  * coco json path: File path to the coco json files that contain all the labels
+  * coco data path: Folder path to the image folder where coco expects things to be at
+  * yolo output path: Folder path to place output yolo dataset.yaml and image folder.
+  * optional bbox: with this flag set, the script will actually do bbox instead of segmentation
 
-Make sure to replace `path/to/coco_annotations.json` with the actual path to your COCO annotation JSON file and `path/to/output_folder` with the desired output folder path.
+### potential catches:
 
-The code utilizes the standard Python libraries, json and os, eliminating the need for additional dependencies. Simply provide COCO JSON files as input, and the package will seamlessly convert the dataset annotations into the YOLO segmentation format.
+To save on disk-space, all images are symlinked, not copied. If desired, you can change the source code to copy if necessary. 
 
-## Contributing
+Train/Val folder are auto generated and data are auto split into each folder. The split ratio is 
+* 10% val for image size below 5000
+* 1% val for image size from 5000 to 20k
+* 0.1% for image size above 20k 
 
-If you find any issues or have suggestions for improvement, feel free to open an issue or submit a pull request. Contributions are welcome!
+## COCO2YOLO-merge.py
+
+This script is used for merging additional COCO labeling into existing yolo dataset. 
+
+
+Usage:
+```
+coco2yolo-seg/COCO2YOLO-merge.py <source coco json> <destination yolo dataset.yaml> --<bbox=False>
+```
+  * source coco json: coco's json label file with new labels
+  * destination yolo dataset.yaml: destination yolo dataset to merge data into.
+    * It is expected that images for this dataset is somewhere in a subfolder from where the dataset.yaml is.
+  * optional bbox: with this flag set, the script will actually do bbox instead of segmentation
+  
+The classes list in yolo dataset are treated as the target class IDs. Only class names are used from coco's data. This way, any id different from coco's dataset is ignored.
+
+For my use case I've picked a small subset from a huge per-labeled dataset and added label for a new classes, then re-added their label back from original dataset. Thus the design actually doesn't allow adding new images from input coco dataset, only allow merging label onto existing YOLO dataset. This way, the sub-set images are not polluted with more images that might contain new class but not labeled.
+
+Another consideration for not adding new images are the difficulty for deciding on val/train. Since YOLO dataset allows a few different way of representing val/train. Thus it is simply not handled.
 
 ## License
 
-MIT License.
-
-## References
-
-https://docs.ultralytics.com/datasets/segment
-
-### Medium article
-[zubinbhuyan.medium.com - Effortless COCO annotation to YOLO segmentation](https://zubinbhuyan.medium.com/effortless-coco-annotation-to-yolo-segmentation-14b4c7f893b9)
+MIT License. (same with upstream)
 
